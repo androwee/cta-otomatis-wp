@@ -1,0 +1,47 @@
+/*
+ * Stylesheet untuk Plugin CTA Otomatis
+ */
+
+.coa-cta-container {
+    /* background-color properti dihapus, sekarang diatur via inline style */
+    border-left: 5px solid #0073aa;
+    padding: 20px 25px;
+    margin: 30px 0;
+    clear: both;
+    border-radius: 4px;
+}
+
+.coa-heading {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.coa-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.coa-button {
+    /* background-color dan color properti dihapus */
+    display: inline-block;
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+    border: none; /* Menghapus border default pada beberapa tema */
+    transition: filter 0.2s ease-in-out; /* Transisi untuk efek hover */
+}
+
+.coa-button:hover,
+.coa-button:focus {
+    /* * Menggunakan filter brightness untuk menggelapkan warna tombol apa pun saat hover.
+     * Ini cara yang lebih baik daripada mendefinisikan warna hover statis.
+     */
+    filter: brightness(90%);
+    color: inherit; /* Pastikan warna teks tidak berubah secara aneh */
+}
