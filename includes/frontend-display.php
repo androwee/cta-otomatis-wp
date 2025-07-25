@@ -14,10 +14,24 @@ function coa_inject_cta( $content ) {
         if ( empty( $options ) ) return $content;
 
         $ctas_to_inject = ['awal' => '', 'tengah' => '', 'akhir' => ''];
+        $current_post_id = get_the_ID();
+        $current_post_categories = wp_get_post_categories($current_post_id, ['fields' => 'ids']);
 
         for ( $i = 1; $i <= 3; $i++ ) {
             if ( ! empty( $options["coa_cta_{$i}_active"] ) && ! empty( $options["coa_cta_{$i}_heading"] ) && ! empty( $options["coa_cta_{$i}_phones"] ) ) {
                 
+                // Pengecekan Pengecualian Post
+                $exclude_posts = !empty($options["coa_cta_{$i}_exclude_posts"]) ? array_map('trim', explode(',', $options["coa_cta_{$i}_exclude_posts"])) : [];
+                if (in_array($current_post_id, $exclude_posts)) {
+                    continue; // Lanjut ke CTA berikutnya jika post ini dikecualikan
+                }
+
+                // Pengecekan Kategori
+                $target_categories = !empty($options["coa_cta_{$i}_categories"]) ? $options["coa_cta_{$i}_categories"] : [];
+                if (!empty($target_categories) && !array_intersect($target_categories, $current_post_categories)) {
+                    continue; // Lanjut ke CTA berikutnya jika tidak ada kategori yang cocok
+                }
+
                 $heading   = esc_html( $options["coa_cta_{$i}_heading"] );
                 $placement = esc_attr( $options["coa_cta_{$i}_placement"] );
                 $phones_raw = $options["coa_cta_{$i}_phones"];
@@ -57,6 +71,11 @@ function coa_inject_cta( $content ) {
                             $icon_html = '<i class="fa-brands fa-whatsapp"></i> ';
                             $sanitized_number = preg_replace( '/\D/', '', $number );
                             $href = 'https://wa.me/' . esc_attr( $sanitized_number );
+                            break;
+
+                        case 'url':
+                            $icon_html = '<i class="fa-solid fa-link"></i> ';
+                            $href = esc_url($number);
                             break;
                         
                         default:

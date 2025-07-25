@@ -61,13 +61,19 @@ function coa_settings_init() {
             [
                 'type' => 'textarea',
                 'id' => "coa_cta_{$i}_phones",
-                'placeholder' => "Format: Tipe, Label Tombol, Nomor\n\nContoh:\ntelepon, Hubungi Sales, 081234567890\nwhatsapp, Chat via WhatsApp, 6281234567890",
-                'description' => 'Gunakan tipe "telepon" atau "whatsapp". Untuk WhatsApp, gunakan format internasional tanpa tanda + (contoh: 628... bukan 08...).'
+                'placeholder' => "Format: Tipe, Label Tombol, Nomor/URL\n\nContoh:\ntelepon, Hubungi Kami, 081234567890\nwhatsapp, Chat Sales, 6281234567890\nurl, Lihat Promo, https://domain.com/promo",
+                'description' => 'Tipe yang didukung: "telepon", "whatsapp", "url".<br>Untuk WhatsApp, gunakan format internasional (contoh: 628...).<br>Untuk URL, masukkan tautan lengkap (termasuk https://).'
             ]
         );
         
         add_settings_field("coa_cta_{$i}_placement", 'Posisi Penempatan', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'select', 'id' => "coa_cta_{$i}_placement", 'options' => ['awal' => 'Awal Artikel', 'tengah' => 'Tengah Artikel', 'akhir' => 'Akhir Artikel']]);
         
+        // Fitur Baru: Penargetan Kategori
+        add_settings_field("coa_cta_{$i}_categories", 'Target Kategori', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'categories', 'id' => "coa_cta_{$i}_categories", 'description' => 'Tampilkan CTA hanya pada artikel dalam kategori yang dipilih. Kosongkan untuk menampilkan di semua kategori.']);
+
+        // Fitur Baru: Pengecualian Post
+        add_settings_field("coa_cta_{$i}_exclude_posts", 'Kecualikan Post ID', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'text', 'id' => "coa_cta_{$i}_exclude_posts", 'placeholder' => 'Contoh: 15, 27, 103', 'description' => 'Masukkan ID post yang ingin dikecualikan, pisahkan dengan koma.']);
+
         add_settings_field("coa_cta_{$i}_bg_color", 'Warna Latar CTA', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'color', 'id' => "coa_cta_{$i}_bg_color", 'default' => '#f7f7f7']);
         add_settings_field("coa_cta_{$i}_btn_color", 'Warna Tombol', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'color', 'id' => "coa_cta_{$i}_btn_color", 'default' => '#0073aa']);
         add_settings_field("coa_cta_{$i}_btn_text_color", 'Warna Teks Tombol', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'color', 'id' => "coa_cta_{$i}_btn_text_color", 'default' => '#ffffff']);
@@ -90,10 +96,11 @@ function coa_render_field( $args ) {
             break;
         case 'text':
             echo '<input type="text" name="coa_settings[' . esc_attr($id) . ']" value="' . esc_attr($value) . '" class="regular-text" placeholder="' . esc_attr($args['placeholder'] ?? '') . '">';
+            if (isset($args['description'])) echo '<p class="description">' . esc_html($args['description']) . '</p>';
             break;
         case 'textarea':
-            echo '<textarea name="coa_settings[' . esc_attr($id) . ']" rows="5" class="large-text" placeholder="' . esc_attr($args['placeholder'] ?? '') . '">' . esc_textarea($value) . '</textarea>';
-            if (isset($args['description'])) echo '<p class="description">' . esc_html($args['description']) . '</p>';
+             echo '<textarea name="coa_settings[' . esc_attr($id) . ']" rows="5" class="large-text" placeholder="' . esc_attr($args['placeholder'] ?? '') . '">' . esc_textarea($value) . '</textarea>';
+            if (isset($args['description'])) echo '<p class="description">' . wp_kses_post($args['description']) . '</p>';
             break;
         case 'select':
             echo '<select name="coa_settings[' . esc_attr($id) . ']">';
@@ -104,6 +111,17 @@ function coa_render_field( $args ) {
             break;
         case 'color':
             echo '<input type="text" name="coa_settings[' . esc_attr($id) . ']" value="' . esc_attr($value) . '" class="coa-color-picker" data-default-color="' . esc_attr($args['default'] ?? '') . '">';
+            break;
+        case 'categories':
+            $categories = get_categories(['hide_empty' => false]);
+            $saved_cats = isset($options[$id]) && is_array($options[$id]) ? $options[$id] : [];
+            echo '<div style="max-height: 150px; overflow-y: auto; border: 1px solid #ccd0d4; padding: 5px;">';
+            foreach ($categories as $category) {
+                $checked = in_array($category->term_id, $saved_cats) ? 'checked' : '';
+                echo '<label><input type="checkbox" name="coa_settings[' . esc_attr($id) . '][]" value="' . esc_attr($category->term_id) . '" ' . $checked . '> ' . esc_html($category->name) . '</label><br>';
+            }
+            echo '</div>';
+            if (isset($args['description'])) echo '<p class="description">' . esc_html($args['description']) . '</p>';
             break;
     }
 }
@@ -123,6 +141,8 @@ function coa_sanitize_options( $input ) {
         $all_keys[] = "coa_cta_{$i}_heading";
         $all_keys[] = "coa_cta_{$i}_phones";
         $all_keys[] = "coa_cta_{$i}_placement";
+        $all_keys[] = "coa_cta_{$i}_categories";
+        $all_keys[] = "coa_cta_{$i}_exclude_posts";
         $all_keys[] = "coa_cta_{$i}_bg_color";
         $all_keys[] = "coa_cta_{$i}_btn_color";
         $all_keys[] = "coa_cta_{$i}_btn_text_color";
@@ -130,8 +150,8 @@ function coa_sanitize_options( $input ) {
 
     foreach ( $all_keys as $key ) {
         if ( !isset($input[$key]) ) {
-            if (substr($key, -6) === 'active') {
-                 $sanitized_input[$key] = '0';
+            if (substr($key, -6) === 'active' || substr($key, -10) === 'categories') {
+                 $sanitized_input[$key] = (substr($key, -10) === 'categories') ? [] : '0';
             }
             continue;
         }
@@ -144,6 +164,10 @@ function coa_sanitize_options( $input ) {
             $sanitized_input[$key] = '1';
         } elseif (substr($key, -6) === 'phones') {
             $sanitized_input[$key] = sanitize_textarea_field($value);
+        } elseif (substr($key, -10) === 'categories') {
+            $sanitized_input[$key] = is_array($value) ? array_map('absint', $value) : [];
+        } elseif (substr($key, -13) === 'exclude_posts') {
+            $sanitized_input[$key] = implode(', ', array_map('absint', explode(',', sanitize_text_field($value))));
         } else {
             $sanitized_input[$key] = sanitize_text_field($value);
         }
