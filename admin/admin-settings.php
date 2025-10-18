@@ -66,7 +66,7 @@ function coa_settings_init() {
             ]
         );
         
-        add_settings_field("coa_cta_{$i}_placement", 'Posisi Penempatan', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'select', 'id' => "coa_cta_{$i}_placement", 'options' => ['awal' => 'Awal Artikel', 'tengah' => 'Tengah Artikel', 'akhir' => 'Akhir Artikel']]);
+        add_settings_field("coa_cta_{$i}_placement", 'Posisi Penempatan', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'select', 'id' => "coa_cta_{$i}_placement", 'options' => ['awal' => 'Awal Artikel', 'bawah_paragraf_1' => 'Di Bawah Paragraf Pertama', 'tengah' => 'Tengah Artikel', 'akhir' => 'Akhir Artikel']]);
         
         // Fitur Baru: Penargetan Kategori
         add_settings_field("coa_cta_{$i}_categories", 'Target Kategori', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'categories', 'id' => "coa_cta_{$i}_categories", 'description' => 'Tampilkan CTA hanya pada artikel dalam kategori yang dipilih. Kosongkan untuk menampilkan di semua kategori.']);
@@ -78,6 +78,28 @@ function coa_settings_init() {
         add_settings_field("coa_cta_{$i}_btn_color", 'Warna Tombol', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'color', 'id' => "coa_cta_{$i}_btn_color", 'default' => '#0073aa']);
         add_settings_field("coa_cta_{$i}_btn_text_color", 'Warna Teks Tombol', 'coa_render_field', 'cta_otomatis', "coa_cta_{$i}_section", ['type' => 'color', 'id' => "coa_cta_{$i}_btn_text_color", 'default' => '#ffffff']);
     }
+
+    // Bagian Baru untuk CSS Kustom
+    add_settings_section(
+        'coa_custom_css_section',
+        'CSS Kustom',
+        null,
+        'cta_otomatis'
+    );
+
+    add_settings_field(
+        'coa_custom_css',
+        'Kode CSS Kustom',
+        'coa_render_field',
+        'cta_otomatis',
+        'coa_custom_css_section',
+        [
+            'type' => 'textarea',
+            'id' => 'coa_custom_css',
+            'placeholder' => ".coa-cta-container {\n    border-radius: 10px;\n}",
+            'description' => 'Masukkan kode CSS kustom Anda di sini untuk mengubah tampilan CTA. Kode ini akan dimuat di header situs.'
+        ]
+    );
 }
 add_action( 'admin_init', 'coa_settings_init' );
 
@@ -99,7 +121,8 @@ function coa_render_field( $args ) {
             if (isset($args['description'])) echo '<p class="description">' . esc_html($args['description']) . '</p>';
             break;
         case 'textarea':
-             echo '<textarea name="coa_settings[' . esc_attr($id) . ']" rows="5" class="large-text" placeholder="' . esc_attr($args['placeholder'] ?? '') . '">' . esc_textarea($value) . '</textarea>';
+            $rows = ($id === 'coa_custom_css') ? 10 : 5;
+            echo '<textarea name="coa_settings[' . esc_attr($id) . ']" rows="' . $rows . '" class="large-text" placeholder="' . esc_attr($args['placeholder'] ?? '') . '">' . esc_textarea($value) . '</textarea>';
             if (isset($args['description'])) echo '<p class="description">' . wp_kses_post($args['description']) . '</p>';
             break;
         case 'select':
@@ -147,6 +170,7 @@ function coa_sanitize_options( $input ) {
         $all_keys[] = "coa_cta_{$i}_btn_color";
         $all_keys[] = "coa_cta_{$i}_btn_text_color";
     }
+    $all_keys[] = 'coa_custom_css'; // Tambahkan kunci CSS kustom
 
     foreach ( $all_keys as $key ) {
         if ( !isset($input[$key]) ) {
@@ -168,6 +192,8 @@ function coa_sanitize_options( $input ) {
             $sanitized_input[$key] = is_array($value) ? array_map('absint', $value) : [];
         } elseif (substr($key, -13) === 'exclude_posts') {
             $sanitized_input[$key] = implode(', ', array_map('absint', explode(',', sanitize_text_field($value))));
+        } elseif ( $key === 'coa_custom_css' ) {
+            $sanitized_input[$key] = wp_strip_all_tags( $value );
         } else {
             $sanitized_input[$key] = sanitize_text_field($value);
         }
