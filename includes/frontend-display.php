@@ -13,7 +13,7 @@ function coa_inject_cta( $content ) {
         $options = get_option( 'coa_settings' );
         if ( empty( $options ) ) return $content;
 
-        $ctas_to_inject = ['awal' => '', 'tengah' => '', 'akhir' => ''];
+        $ctas_to_inject = ['awal' => '', 'bawah_paragraf_1' => '', 'tengah' => '', 'akhir' => ''];
         $current_post_id = get_the_ID();
         $current_post_categories = wp_get_post_categories($current_post_id, ['fields' => 'ids']);
 
@@ -95,6 +95,17 @@ function coa_inject_cta( $content ) {
 
         if ( ! empty( $ctas_to_inject['awal'] ) ) $content = $ctas_to_inject['awal'] . $content;
         if ( ! empty( $ctas_to_inject['akhir'] ) ) $content = $content . $ctas_to_inject['akhir'];
+
+        if ( ! empty( $ctas_to_inject['bawah_paragraf_1'] ) ) {
+            $paragraphs = explode( '</p>', $content );
+            if ( count( $paragraphs ) > 1 ) {
+                $paragraphs[0] .= '</p>' . $ctas_to_inject['bawah_paragraf_1'];
+                $content = implode( '', $paragraphs );
+            } else {
+                $content .= $ctas_to_inject['bawah_paragraf_1'];
+            }
+        }
+
         if ( ! empty( $ctas_to_inject['tengah'] ) ) {
             $paragraphs = explode( '</p>', $content );
             $paragraph_count = count( $paragraphs );

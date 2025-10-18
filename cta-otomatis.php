@@ -23,6 +23,7 @@ define( 'COA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 // Memuat file-file yang dibutuhkan dari folder masing-masing
 require_once COA_PLUGIN_PATH . 'admin/admin-settings.php';
 require_once COA_PLUGIN_PATH . 'includes/frontend-display.php';
+require_once COA_PLUGIN_PATH . 'includes/shortcodes.php';
 
 /**
  * Mendaftarkan stylesheet untuk tampilan frontend.
@@ -55,3 +56,15 @@ function coa_enqueue_fontawesome() {
     }
 }
 add_action( 'wp_enqueue_scripts', 'coa_enqueue_fontawesome' );
+
+/**
+ * Memuat CSS Kustom di header.
+ */
+function coa_load_custom_css() {
+    $options = get_option( 'coa_settings' );
+    if ( ! empty( $options['coa_custom_css'] ) ) {
+        $custom_css = wp_strip_all_tags( $options['coa_custom_css'] );
+        echo '<style type="text/css">' . $custom_css . '</style>';
+    }
+}
+add_action( 'wp_head', 'coa_load_custom_css' );
